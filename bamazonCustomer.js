@@ -14,38 +14,10 @@ var connection = mysql.createConnection({
 
 
 connection.connect(function(err) {
-    if(err) {
-        throw err;
-    }
+    if(err)  throw err;
     // console.log("connected as id " + connection.threadId);
     showTable();
-    
 });
-
-function selectAll() {
-    connection.query("Select * from products", function(err, results) {
-        if(err) throw err;
-        console.log(results)
-        })
-}
-
-function confirmPurchase() {
-    inquirer.prompt({
-        type: 'list',
-        name: 'confirm',
-        message: "Would you like to purchase? (Use arrows)",
-        choices: ["Yes", "No"]
-
-    }).then(answers => {
-        if (answers.confirm === "Yes") {
-           console.log("Thank you for your purchase!");
-        } else if (answers.confirm === "No") {
-           console.log("Order cancelled.");
-        }
-    });
-}
-
-
 
 function showTable() {
     var Table = require('cli-table');
@@ -69,15 +41,6 @@ function showTable() {
     })
 }
 
-function tableFormat(number, max) {
-    let string = "";
-    if(number >0)
-        while(string.length < max-number) {
-            string +=" ";
-        }
-        return string;
-}
-
 function buyPrompt() {
     inquirer.prompt([{
         type: 'input',
@@ -94,20 +57,51 @@ function buyPrompt() {
         const buyQuery = "SELECT product_name, price FROM products WHERE item_id = ?";
         item = answers.item;
         quantity = answers.quantity;
+        // Run a query to update the database
         connection.query(updateQuery, [quantity, item], function(err, results) {
-          if(results <= 0) {
+          if(results <= quantity) {
               console.log("Sorry, we don't have enough in inventory!");
           } else {
             connection.query(buyQuery, [item], function(err, results) {
-                // console.log(results[0]);
-                console.log("Thanks so much for your purchase of " + results[0].product_name+ "!" + "\n");
-                console.log("Your total comes to " + (results[0].price * quantity) + "." + "\n");
+                console.log("Your total for  " + quantity + " of " + results[0].product_name +  " comes to a total of $" + (results[0].price * quantity) + "." + "\n");
                 confirmPurchase();
             });
           }
-          buyPrompt();
         })
     }); 
 }
 
+function confirmPurchase() {
+    inquirer.prompt({
+        type: 'list',
+        name: 'confirm',
+        message: "Would you like to purchase? (Use arrows)",
+        choices: ["Yes", "No"]
 
+    }).then(answers => {
+        if (answers.confirm === "Yes") {
+           console.log("Thank you for your purchase!" + "\n");
+           shopMore();
+        } else if (answers.confirm === "No") {
+           console.log("Order cancelled." + "\n");
+           shopMore();
+        }
+    });
+}
+
+function shopMore() {
+    inquirer.prompt([{
+        type: 'list',
+        name: 'shop_more',
+        message: "Would you like to continue shopping?",
+        choices: ["Yes", "No"]
+
+    }]).then(answers => {
+        if (answers.confirm === "Yes") {
+           buyPrompt();
+        } else if (answers.confirm === "No") {
+           console.log("Thank you! Come again soon!");
+           connection.end(() => {process.exit(); });
+        }
+    }); 
+}
