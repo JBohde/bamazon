@@ -18,30 +18,71 @@ connection.connect(function(err) {
         throw err;
     }
     // console.log("connected as id " + connection.threadId);
-    // let dbIds;
     showTable();
     
 });
 
+function selectAll() {
+    connection.query("Select * from products", function(err, results) {
+        if(err) throw err;
+        console.log(results)
+        })
+}
+
+function confirmPurchase() {
+    inquirer.prompt({
+        type: 'list',
+        name: 'confirm',
+        message: "Would you like to purchase? (Use arrows)",
+        choices: ["Yes", "No"]
+
+    }).then(answers => {
+        if (answers.confirm === "Yes") {
+           console.log("Thank you for your purchase!");
+        } else if (answers.confirm === "No") {
+           console.log("Order cancelled.");
+        }
+    });
+}
+
+
+
 function showTable() {
+    var Table = require('cli-table');
+    // instantiate 
+    var table = new Table({
+      head: ['id', 'Product', 'Department', 'Price'], 
+      colWidths: [5, 70, 25, 10]
+    });
     connection.query("Select * from products", function(err, res) {
         if(err) throw err;
         res = res;
-        console.log("\n***********************BAMAZON*******************************\n");
+        console.log("\n WELCOME TO BAMAZON! \n");
         for(i = 0; i < res.length; i++) {
-          console.log("id:" + res[i].item_id + " PRODUCT: " + res[i].product_name);
-          console.log("     DEPT: " + res[i].department_name);
-          console.log("     PRICE: " + res[i].price + "\n");
+            // table is an Array, so you can `push`, `unshift`, `splice` and friends 
+          table.push(
+            [res[i].item_id, res[i].product_name, res[i].department_name, res[i].price ]
+         );
         }
+        console.log(table.toString());
         buyPrompt();
     })
+}
+
+function tableFormat(number, max) {
+    let string = "";
+    if(number >0)
+        while(string.length < max-number) {
+            string +=" ";
+        }
+        return string;
 }
 
 function buyPrompt() {
     inquirer.prompt([{
         type: 'input',
         name: 'item',
-        message: "What's the item id number of the product you would like to purchase?"
+        message: "Enter the ID of the product you would like to purchase:"
     },
     {
         type: 'input',
@@ -49,12 +90,20 @@ function buyPrompt() {
         message: "How many would you like to buy?"
     
     }]).then(answers => {
-        const buy = "SELECT item_id FROM products WHERE item_id = ?  && stock_quantity > ?";
-        connection.query(buy, [answers.item, answers.quantity], function(err, res) {
-          if(res <= 0) {
-            console.log("Sorry, we don't have enough in inventory!");
+        const updateQuery = "UPDATE products SET stock_quantity = stock_quantity -? WHERE item_id = ?";
+        const buyQuery = "SELECT product_name, price FROM products WHERE item_id = ?";
+        item = answers.item;
+        quantity = answers.quantity;
+        connection.query(updateQuery, [quantity, item], function(err, results) {
+          if(results <= 0) {
+              console.log("Sorry, we don't have enough in inventory!");
           } else {
-            console.log(res);
+            connection.query(buyQuery, [item], function(err, results) {
+                // console.log(results[0]);
+                console.log("Thanks so much for your purchase of " + results[0].product_name+ "!" + "\n");
+                console.log("Your total comes to " + (results[0].price * quantity) + "." + "\n");
+                confirmPurchase();
+            });
           }
           buyPrompt();
         })
