@@ -36,7 +36,7 @@ function showTable() {
             [res[i].item_id, res[i].product_name, res[i].department_name, res[i].price ]
          );
         }
-        console.log(table.toString());
+        console.log(table.toString() + "\n");
         buyPrompt();
     })
 }
@@ -45,7 +45,7 @@ function buyPrompt() {
     inquirer.prompt([{
         type: 'input',
         name: 'item',
-        message: "Enter the ID of the product you would like to purchase:"
+        message:"Enter the ID of the product you would like to purchase:"
     },
     {
         type: 'input',
@@ -60,10 +60,10 @@ function buyPrompt() {
         // Run a query to update the database
         connection.query(updateQuery, [quantity, item], function(err, results) {
           if(results <= quantity) {
-              console.log("Sorry, we don't have enough in inventory!");
+              console.log( "\n" + "Sorry, we don't have enough in inventory!");
           } else {
             connection.query(buyQuery, [item], function(err, results) {
-                console.log("Your total for  " + quantity + " of " + results[0].product_name +  " comes to a total of $" + (results[0].price * quantity) + "." + "\n");
+                console.log( "\n" + "Your total for " + quantity + " of " + results[0].product_name +  " comes to a total of $" + (results[0].price * quantity) + "." + "\n");
                 confirmPurchase();
             });
           }
@@ -75,7 +75,7 @@ function confirmPurchase() {
     inquirer.prompt({
         type: 'list',
         name: 'confirm',
-        message: "Would you like to purchase? (Use arrows)",
+        message: "Would you like to purchase?",
         choices: ["Yes", "No"]
 
     }).then(answers => {
@@ -97,9 +97,10 @@ function shopMore() {
         choices: ["Yes", "No"]
 
     }]).then(answers => {
-        if (answers.confirm === "Yes") {
-           buyPrompt();
-        } else if (answers.confirm === "No") {
+        if (answers.shop_more === "Yes") {
+            console.log("Okay! Let's go!");
+           showTable();
+        } else if (answers.shop_more === "No") {
            console.log("Thank you! Come again soon!");
            connection.end(() => {process.exit(); });
         }
