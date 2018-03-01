@@ -58,10 +58,10 @@ function showTable() {
             }
           }
           // determine if inventory was high enough
-          if (chosenItem.stock_quantity < quantity) {
+          if (chosenItem.inventory < parseInt(quantity)) {
               console.log("\n" + "Sorry, we don't have enough in inventory!" + "\n");
               shopMore();
-          } else if (chosenItem.stock_quantity >= quantity) {
+          } else if (chosenItem.inventory >= parseInt(quantity)) {
             // inventory was high enough, so confirm the purchase
               console.log("\n" + "Your total for " + quantity + " of " + chosenItem.product_name +  " comes to a total of $" + (chosenItem.price * quantity) + "." + "\n");
               confirmPurchase();
@@ -80,7 +80,7 @@ function confirmPurchase() {
 
     }).then(answers => {
         if (answers.confirm === "Yes") {
-            const updateQuery = "UPDATE products SET stock_quantity = stock_quantity -? WHERE item_id = ?";
+            const updateQuery = "UPDATE products SET inventory = inventory -? WHERE item_id = ?";
             connection.query(updateQuery, [quantity, item], function(err, res) {
               if(err) throw err;
               console.log("\n" + "Thank you for your purchase!" + "\n");
